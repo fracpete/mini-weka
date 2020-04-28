@@ -150,19 +150,6 @@
     </dependency>
 
     <dependency>
-      <groupId>nz.ac.waikato.cms.weka.thirdparty</groupId>
-      <artifactId>bounce</artifactId>
-      <version>0.18</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-compress</artifactId>
-      <version>1.19</version>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
       <groupId>com.googlecode.matrix-toolkits-java</groupId>
       <artifactId>mtj</artifactId>
       <version>1.0.4</version>
@@ -178,12 +165,6 @@
       <groupId>com.googlecode.netlib-java</groupId>
       <artifactId>netlib-java</artifactId>
       <version>1.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.sun.istack</groupId>
-      <artifactId>istack-commons-runtime</artifactId>
-      <version>3.0.8</version>
     </dependency>
 
     <dependency>
@@ -320,6 +301,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
         <executions>
           <execution>
             <goals>
