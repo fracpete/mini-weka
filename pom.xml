@@ -292,7 +292,7 @@
           </execution>
         </executions>
         <configuration>
-          <mainClass>adams.parser.GenerateParser</mainClass>
+          <mainClass>weka.core.GenerateParser</mainClass>
           <workingDirectory>.</workingDirectory>
           <arguments>
             <argument>${project.basedir}/src/main/resources/weka/core/expressionlanguage/parser</argument>
