@@ -41,24 +41,23 @@ import weka.core.TechnicalInformation.Type;
 import weka.core.TechnicalInformationHandler;
 import weka.core.Utils;
 import weka.core.WeightedInstancesHandler;
+import weka.core.matrix.Matrix;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.NominalToBinary;
 import weka.filters.unsupervised.attribute.Normalize;
 import weka.filters.unsupervised.attribute.ReplaceMissingValues;
 import weka.filters.unsupervised.attribute.Standardize;
 
-import no.uib.cipr.matrix.*;
-import no.uib.cipr.matrix.Matrix;
-
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * <!-- globalinfo-start -->
  * * Implements Gaussian processes for regression without hyperparameter-tuning. To make choosing an appropriate noise level easier, this implementation applies normalization/standardization to the target attribute as well as the other attributes (if  normalization/standardizaton is turned on). Missing values are replaced by the global mean/mode. Nominal attributes are converted to binary ones. Note that kernel caching is turned off if the kernel used implements CachedKernel.
  * * <br><br>
  * <!-- globalinfo-end -->
- * 
+ *
  * <!-- technical-bibtex-start -->
  * * BibTeX:
  * * <pre>
@@ -72,66 +71,65 @@ import java.util.Enumeration;
  * * </pre>
  * * <br><br>
  * <!-- technical-bibtex-end -->
- * 
+ *
  * <!-- options-start -->
  * * Valid options are: <p>
- * * 
+ * *
  * * <pre> -L &lt;double&gt;
  * *  Level of Gaussian Noise wrt transformed target. (default 1)</pre>
- * * 
+ * *
  * * <pre> -N
  * *  Whether to 0=normalize/1=standardize/2=neither. (default 0=normalize)</pre>
- * * 
+ * *
  * * <pre> -K &lt;classname and parameters&gt;
  * *  The Kernel to use.
  * *  (default: weka.classifiers.functions.supportVector.PolyKernel)</pre>
- * * 
+ * *
  * * <pre> -S &lt;num&gt;
  * *  Random number seed.
  * *  (default 1)</pre>
- * * 
+ * *
  * * <pre> -output-debug-info
  * *  If set, classifier is run in debug mode and
  * *  may output additional info to the console</pre>
- * * 
+ * *
  * * <pre> -do-not-check-capabilities
  * *  If set, classifier capabilities are not checked before classifier is built
  * *  (use with caution).</pre>
- * * 
+ * *
  * * <pre> -num-decimal-places
  * *  The number of decimal places for the output of numbers in the model (default 2).</pre>
- * * 
- * * <pre> 
+ * *
+ * * <pre>
  * * Options specific to kernel weka.classifiers.functions.supportVector.PolyKernel:
  * * </pre>
- * * 
+ * *
  * * <pre> -E &lt;num&gt;
  * *  The Exponent to use.
  * *  (default: 1.0)</pre>
- * * 
+ * *
  * * <pre> -L
  * *  Use lower-order terms.
  * *  (default: no)</pre>
- * * 
+ * *
  * * <pre> -C &lt;num&gt;
- * *  The size of the cache (a prime number), 0 for full cache and 
+ * *  The size of the cache (a prime number), 0 for full cache and
  * *  -1 to turn it off.
  * *  (default: 250007)</pre>
- * * 
+ * *
  * * <pre> -output-debug-info
  * *  Enables debugging output (if available) to be printed.
  * *  (default: off)</pre>
- * * 
+ * *
  * * <pre> -no-checks
  * *  Turns off all checks - use with caution!
  * *  (default: checks on)</pre>
- * * 
+ * *
  * <!-- options-end -->
- * 
+ *
  * @author Kurt Driessens (kurtd@cs.waikato.ac.nz)
  * @author Remco Bouckaert (remco@cs.waikato.ac.nz)
- * @author Eibe Frank, University of Waikato
- * @version $Revision: 15519 $
+ * @version $Revision$
  */
 public class GaussianProcesses extends RandomizableClassifier implements
   IntervalEstimator, ConditionalDensityEstimator,
@@ -187,11 +185,8 @@ public class GaussianProcesses extends RandomizableClassifier implements
   protected double m_Alin;
   protected double m_Blin;
 
-  /** Template of kernel to use */
+  /** Kernel to use * */
   protected Kernel m_kernel = new PolyKernel();
-
-  /** Actual kernel object to use */
-  protected Kernel m_actualKernel;
 
   /** The number of training instances */
   protected int m_NumTrain = 0;
@@ -200,17 +195,17 @@ public class GaussianProcesses extends RandomizableClassifier implements
   protected double m_avg_target;
 
   /** (negative) covariance matrix in symmetric matrix representation **/
-  public Matrix m_L;
+  public double[][] m_L;
 
   /** The vector of target values. */
-  protected Vector m_t;
-  
+  protected Matrix m_t;
+
   /** The weight of the training instances. */
   protected double[] m_weights;
 
   /**
    * Returns a string describing classifier
-   * 
+   *
    * @return a description suitable for displaying in the explorer/experimenter
    *         gui
    */
@@ -231,7 +226,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
    * Returns an instance of a TechnicalInformation object, containing detailed
    * information about the technical background of this class, e.g., paper
    * reference or book this class is based on.
-   * 
+   *
    * @return the technical information about this class
    */
   @Override
@@ -251,7 +246,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Returns default capabilities of the classifier.
-   * 
+   *
    * @return the capabilities of this classifier
    */
   @Override
@@ -281,7 +276,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Method for building the classifier.
-   * 
+   *
    * @param insts the set of training instances
    * @throws Exception if the classifier can't be built successfully
    */
@@ -363,11 +358,13 @@ public class GaussianProcesses extends RandomizableClassifier implements
     }
 
     // Initialize kernel
-    m_actualKernel = Kernel.makeCopy(m_kernel);
-    if (m_kernel instanceof CachedKernel) {
-      ((CachedKernel)m_actualKernel).setCacheSize(-1); // We don't need a cache at all
+    try {
+      CachedKernel cachedKernel = (CachedKernel) m_kernel;
+      cachedKernel.setCacheSize(0);
+    } catch (Exception e) {
+      // ignore
     }
-    m_actualKernel.buildKernel(insts);
+    m_kernel.buildKernel(insts);
 
     // Compute average target value
     double sum = 0.0;
@@ -387,30 +384,94 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
     // initialize kernel matrix/covariance matrix
     int n = insts.numInstances();
-    m_L = new UpperSPDDenseMatrix(n);
+    m_L = new double[n][];
+    double kv = 0;
     for (int i = 0; i < n; i++) {
-      for (int j = i + 1; j < n; j++) {
-        m_L.set(i, j, m_weights[i] * m_weights[j] * m_actualKernel.eval(i, j, insts.instance(i)));
+      m_L[i] = new double[i + 1];
+      for (int j = 0; j < i; j++) {
+        double wj = Math.sqrt(insts.instance(j).weight());
+        kv = m_weights[i] * m_weights[j] * m_kernel.eval(i, j, insts.instance(i));
+        m_L[i][j] = kv;
       }
-      m_L.set(i, i, m_weights[i] * m_weights[i] * m_actualKernel.eval(i, i, insts.instance(i)) + m_deltaSquared);
+      kv = m_weights[i] * m_weights[i] * m_kernel.eval(i, i, insts.instance(i));
+      m_L[i][i] = kv + m_deltaSquared;
     }
 
-    // Compute inverse of kernel matrix
-    m_L = new DenseCholesky(n, true).factor((UpperSPDDenseMatrix)m_L).solve(Matrices.identity(n));
-    m_L = new UpperSPDDenseMatrix(m_L); // Convert from DenseMatrix
+    // Save memory (can't use Kernel.clean() because of polynominal kernel with
+    // exponent 1)
+    if (m_kernel instanceof CachedKernel) {
+      m_kernel = Kernel.makeCopy(m_kernel);
+      ((CachedKernel) m_kernel).setCacheSize(-1);
+      m_kernel.buildKernel(insts);
+    }
 
-    // Compute t
-    Vector tt = new DenseVector(n);
+    // Calculate inverse matrix exploiting symmetry of covariance matrix
+    // NB this replaces the kernel matrix with (the negative of) its inverse and
+    // does
+    // not require any extra memory for a solution matrix
+    double[] tmprow = new double[n];
+    double tmp2 = 0, tmp = 0;
     for (int i = 0; i < n; i++) {
-      tt.set(i, m_weights[i] * (insts.instance(i).classValue() - m_avg_target));
+      tmp = -m_L[i][i];
+      m_L[i][i] = 1.0 / tmp;
+      for (int j = 0; j < n; j++) {
+        if (j != i) {
+          if (j < i) {
+            tmprow[j] = m_L[i][j];
+            m_L[i][j] /= tmp;
+            tmp2 = m_L[i][j];
+            m_L[j][j] += tmp2 * tmp2 * tmp;
+          } else if (j > i) {
+            tmprow[j] = m_L[j][i];
+            m_L[j][i] /= tmp;
+            tmp2 = m_L[j][i];
+            m_L[j][j] += tmp2 * tmp2 * tmp;
+          }
+        }
+      }
+
+      for (int j = 0; j < n; j++) {
+        if (j != i) {
+          if (i < j) {
+            for (int k = 0; k < i; k++) {
+              m_L[j][k] += tmprow[j] * m_L[i][k];
+            }
+          } else {
+            for (int k = 0; k < j; k++) {
+              m_L[j][k] += tmprow[j] * m_L[i][k];
+            }
+
+          }
+          for (int k = i + 1; k < j; k++) {
+            m_L[j][k] += tmprow[j] * m_L[k][i];
+          }
+        }
+      }
     }
-    m_t = m_L.mult(tt, new DenseVector(insts.numInstances()));
+
+    m_t = new Matrix(insts.numInstances(), 1);
+    double[] tt = new double[n];
+    for (int i = 0; i < n; i++) {
+      tt[i] = m_weights[i] * (insts.instance(i).classValue() - m_avg_target);
+    }
+
+    // calculate m_t = tt . m_L
+    for (int i = 0; i < n; i++) {
+      double s = 0;
+      for (int k = 0; k < i; k++) {
+        s -= m_L[i][k] * tt[k];
+      }
+      for (int k = i; k < n; k++) {
+        s -= m_L[k][i] * tt[k];
+      }
+      m_t.set(i, 0, s);
+    }
 
   } // buildClassifier
 
   /**
    * Classifies a given instance.
-   * 
+   *
    * @param inst the instance to be classified
    * @return the classification
    * @throws Exception if instance could not be classified successfully
@@ -422,12 +483,13 @@ public class GaussianProcesses extends RandomizableClassifier implements
     inst = filterInstance(inst);
 
     // Build K vector
-    Vector k = new DenseVector(m_NumTrain);
+    Matrix k = new Matrix(m_NumTrain, 1);
     for (int i = 0; i < m_NumTrain; i++) {
-      k.set(i, m_weights[i] * m_actualKernel.eval(-1, i, inst));
+      k.set(i, 0, m_weights[i] * m_kernel.eval(-1, i, inst));
     }
 
-    double result = (k.dot(m_t) + m_avg_target - m_Blin) / m_Alin;
+    double result = k.transpose().times(m_t).get(0, 0) + m_avg_target;
+    result = (result - m_Blin) / m_Alin;
 
     return result;
 
@@ -462,11 +524,19 @@ public class GaussianProcesses extends RandomizableClassifier implements
    * Computes standard deviation for given instance, without transforming target
    * back into original space.
    */
-  protected double computeStdDev(Instance inst, Vector k) throws Exception {
+  protected double computeStdDev(Instance inst, Matrix k) throws Exception {
 
-    double kappa = m_actualKernel.eval(-1, -1, inst) + m_deltaSquared;
+    double kappa = m_kernel.eval(-1, -1, inst) + m_deltaSquared;
 
-    double s = m_L.mult(k, new DenseVector(k.size())).dot(k);
+    double s = 0;
+    int n = m_L.length;
+    for (int i = 0; i < n; i++) {
+      double t = 0;
+      for (int j = 0; j < n; j++) {
+        t -= k.get(j, 0) * (i > j ? m_L[i][j] : m_L[j][i]);
+      }
+      s += t * k.get(i, 0);
+    }
 
     double sigma = m_delta;
     if (kappa > s) {
@@ -478,7 +548,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Computes a prediction interval for the given instance and confidence level.
-   * 
+   *
    * @param inst the instance to make the prediction for
    * @param confidenceLevel the percentage of cases the interval should cover
    * @return a 1*2 array that contains the boundaries of the interval
@@ -491,12 +561,12 @@ public class GaussianProcesses extends RandomizableClassifier implements
     inst = filterInstance(inst);
 
     // Build K vector (and Kappa)
-    Vector k = new DenseVector(m_NumTrain);
+    Matrix k = new Matrix(m_NumTrain, 1);
     for (int i = 0; i < m_NumTrain; i++) {
-      k.set(i, m_weights[i] * m_actualKernel.eval(-1, i, inst));
+      k.set(i, 0, m_weights[i] * m_kernel.eval(-1, i, inst));
     }
 
-    double estimate = k.dot(m_t) + m_avg_target;
+    double estimate = k.transpose().times(m_t).get(0, 0) + m_avg_target;
 
     double sigma = computeStdDev(inst, k);
 
@@ -518,7 +588,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Gives standard deviation of the prediction at the given instance.
-   * 
+   *
    * @param inst the instance to get the standard deviation for
    * @return the standard deviation
    * @throws Exception if computation fails
@@ -528,9 +598,9 @@ public class GaussianProcesses extends RandomizableClassifier implements
     inst = filterInstance(inst);
 
     // Build K vector (and Kappa)
-    Vector k = new DenseVector(m_NumTrain);
+    Matrix k = new Matrix(m_NumTrain, 1);
     for (int i = 0; i < m_NumTrain; i++) {
-      k.set(i, m_weights[i] * m_actualKernel.eval(-1, i, inst));
+      k.set(i, 0, m_weights[i] * m_kernel.eval(-1, i, inst));
     }
 
     return computeStdDev(inst, k) / m_Alin;
@@ -539,7 +609,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
   /**
    * Returns natural logarithm of density estimate for given value based on
    * given instance.
-   * 
+   *
    * @param inst the instance to make the prediction for.
    * @param value the value to make the prediction for.
    * @return the natural logarithm of the density estimate
@@ -551,12 +621,12 @@ public class GaussianProcesses extends RandomizableClassifier implements
     inst = filterInstance(inst);
 
     // Build K vector (and Kappa)
-    Vector k = new DenseVector(m_NumTrain);
+    Matrix k = new Matrix(m_NumTrain, 1);
     for (int i = 0; i < m_NumTrain; i++) {
-      k.set(i, m_weights[i] * m_actualKernel.eval(-1, i, inst));
+      k.set(i, 0, m_weights[i] * m_kernel.eval(-1, i, inst));
     }
 
-    double estimate = k.dot(m_t) + m_avg_target;
+    double estimate = k.transpose().times(m_t).get(0, 0) + m_avg_target;
 
     double sigma = computeStdDev(inst, k);
 
@@ -572,13 +642,13 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Returns an enumeration describing the available options.
-   * 
+   *
    * @return an enumeration of all the available options.
    */
   @Override
   public Enumeration<Option> listOptions() {
 
-    java.util.Vector<Option> result = new java.util.Vector<Option>();
+    Vector<Option> result = new Vector<Option>();
 
     result.addElement(new Option(
       "\tLevel of Gaussian Noise wrt transformed target." + " (default 1)",
@@ -606,62 +676,62 @@ public class GaussianProcesses extends RandomizableClassifier implements
   /**
    * Parses a given list of options.
    * <p/>
-   * 
+   *
    * <!-- options-start -->
    * * Valid options are: <p>
-   * * 
+   * *
    * * <pre> -L &lt;double&gt;
    * *  Level of Gaussian Noise wrt transformed target. (default 1)</pre>
-   * * 
+   * *
    * * <pre> -N
    * *  Whether to 0=normalize/1=standardize/2=neither. (default 0=normalize)</pre>
-   * * 
+   * *
    * * <pre> -K &lt;classname and parameters&gt;
    * *  The Kernel to use.
    * *  (default: weka.classifiers.functions.supportVector.PolyKernel)</pre>
-   * * 
+   * *
    * * <pre> -S &lt;num&gt;
    * *  Random number seed.
    * *  (default 1)</pre>
-   * * 
+   * *
    * * <pre> -output-debug-info
    * *  If set, classifier is run in debug mode and
    * *  may output additional info to the console</pre>
-   * * 
+   * *
    * * <pre> -do-not-check-capabilities
    * *  If set, classifier capabilities are not checked before classifier is built
    * *  (use with caution).</pre>
-   * * 
+   * *
    * * <pre> -num-decimal-places
    * *  The number of decimal places for the output of numbers in the model (default 2).</pre>
-   * * 
-   * * <pre> 
+   * *
+   * * <pre>
    * * Options specific to kernel weka.classifiers.functions.supportVector.PolyKernel:
    * * </pre>
-   * * 
+   * *
    * * <pre> -E &lt;num&gt;
    * *  The Exponent to use.
    * *  (default: 1.0)</pre>
-   * * 
+   * *
    * * <pre> -L
    * *  Use lower-order terms.
    * *  (default: no)</pre>
-   * * 
+   * *
    * * <pre> -C &lt;num&gt;
-   * *  The size of the cache (a prime number), 0 for full cache and 
+   * *  The size of the cache (a prime number), 0 for full cache and
    * *  -1 to turn it off.
    * *  (default: 250007)</pre>
-   * * 
+   * *
    * * <pre> -output-debug-info
    * *  Enables debugging output (if available) to be printed.
    * *  (default: off)</pre>
-   * * 
+   * *
    * * <pre> -no-checks
    * *  Turns off all checks - use with caution!
    * *  (default: checks on)</pre>
-   * * 
+   * *
    * <!-- options-end -->
-   * 
+   *
    * @param options the list of options as an array of strings
    * @throws Exception if an option is not supported
    */
@@ -693,17 +763,19 @@ public class GaussianProcesses extends RandomizableClassifier implements
     }
 
     super.setOptions(options);
+
+    Utils.checkForRemainingOptions(options);
   }
 
   /**
    * Gets the current settings of the classifier.
-   * 
+   *
    * @return an array of strings suitable for passing to setOptions
    */
   @Override
   public String[] getOptions() {
 
-    java.util.Vector<String> result = new java.util.Vector<String>();
+    Vector<String> result = new Vector<String>();
 
     result.addElement("-L");
     result.addElement("" + getNoise());
@@ -722,7 +794,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Returns the tip text for this property
-   * 
+   *
    * @return tip text for this property suitable for displaying in the
    *         explorer/experimenter gui
    */
@@ -732,7 +804,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Gets the kernel to use.
-   * 
+   *
    * @return the kernel
    */
   public Kernel getKernel() {
@@ -741,7 +813,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Sets the kernel to use.
-   * 
+   *
    * @param value the new kernel
    */
   public void setKernel(Kernel value) {
@@ -750,7 +822,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Returns the tip text for this property
-   * 
+   *
    * @return tip text for this property suitable for displaying in the
    *         explorer/experimenter gui
    */
@@ -761,7 +833,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
   /**
    * Gets how the training data will be transformed. Will be one of
    * FILTER_NORMALIZE, FILTER_STANDARDIZE, FILTER_NONE.
-   * 
+   *
    * @return the filtering mode
    */
   public SelectedTag getFilterType() {
@@ -772,7 +844,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
   /**
    * Sets how the training data will be transformed. Should be one of
    * FILTER_NORMALIZE, FILTER_STANDARDIZE, FILTER_NONE.
-   * 
+   *
    * @param newType the new filtering mode
    */
   public void setFilterType(SelectedTag newType) {
@@ -784,7 +856,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Returns the tip text for this property
-   * 
+   *
    * @return tip text for this property suitable for displaying in the
    *         explorer/experimenter gui
    */
@@ -795,7 +867,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Get the value of noise.
-   * 
+   *
    * @return Value of noise.
    */
   public double getNoise() {
@@ -804,7 +876,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Set the level of Gaussian Noise.
-   * 
+   *
    * @param v Value to assign to noise.
    */
   public void setNoise(double v) {
@@ -813,7 +885,7 @@ public class GaussianProcesses extends RandomizableClassifier implements
 
   /**
    * Prints out the classifier.
-   * 
+   *
    * @return a description of the classifier as a string
    */
   @Override
@@ -836,27 +908,27 @@ public class GaussianProcesses extends RandomizableClassifier implements
       text.append("Average Target Value : " + m_avg_target + "\n");
 
       text.append("Inverted Covariance Matrix:\n");
-      double min = m_L.get(0, 0);
-      double max = m_L.get(0, 0);
+      double min = -m_L[0][0];
+      double max = -m_L[0][0];
       for (int i = 0; i < m_NumTrain; i++) {
         for (int j = 0; j <= i; j++) {
-          if (m_L.get(i, j) < min) {
-            min = m_L.get(i, j);
-          } else if (m_L.get(i, j) > max) {
-            max = m_L.get(i, j);
+          if (-m_L[i][j] < min) {
+            min = -m_L[i][j];
+          } else if (-m_L[i][j] > max) {
+            max = -m_L[i][j];
           }
         }
       }
       text.append("    Lowest Value = " + min + "\n");
       text.append("    Highest Value = " + max + "\n");
       text.append("Inverted Covariance Matrix * Target-value Vector:\n");
-      min = m_t.get(0);
-      max = m_t.get(0);
+      min = m_t.get(0, 0);
+      max = m_t.get(0, 0);
       for (int i = 0; i < m_NumTrain; i++) {
-        if (m_t.get(i) < min) {
-          min = m_t.get(i);
-        } else if (m_t.get(i) > max) {
-          max = m_t.get(i);
+        if (m_t.get(i, 0) < min) {
+          min = m_t.get(i, 0);
+        } else if (m_t.get(i, 0) > max) {
+          max = m_t.get(i, 0);
         }
       }
       text.append("    Lowest Value = " + min + "\n");

@@ -20,12 +20,6 @@
 
 package weka.filters.unsupervised.attribute;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Vector;
-
-import no.uib.cipr.matrix.*;
-
 import weka.core.Attribute;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
@@ -37,8 +31,14 @@ import weka.core.OptionHandler;
 import weka.core.RevisionUtils;
 import weka.core.SparseInstance;
 import weka.core.Utils;
+import weka.core.matrix.EigenvalueDecomposition;
+import weka.core.matrix.Matrix;
 import weka.filters.Filter;
 import weka.filters.UnsupervisedFilter;
+
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * <!-- globalinfo-start --> Performs a principal components analysis and
@@ -50,43 +50,43 @@ import weka.filters.UnsupervisedFilter;
  * Hall and Gabi Schmidberger.
  * <p/>
  * <!-- globalinfo-end -->
- * 
+ *
  * <!-- options-start --> Valid options are:
  * <p/>
- * 
+ *
  * <pre>
  * -C
  *  Center (rather than standardize) the
  *  data and compute PCA using the covariance (rather
  *   than the correlation) matrix.
  * </pre>
- * 
+ *
  * <pre>
  * -R &lt;num&gt;
  *  Retain enough PC attributes to account
  *  for this proportion of variance in the original data.
  *  (default: 0.95)
  * </pre>
- * 
+ *
  * <pre>
  * -A &lt;num&gt;
- *  Maximum number of attributes to include in 
+ *  Maximum number of attributes to include in
  *  transformed attribute names.
  *  (-1 = include all, default: 5)
  * </pre>
- * 
+ *
  * <pre>
  * -M &lt;num&gt;
  *  Maximum number of PC attributes to retain.
  *  (-1 = include all, default: -1)
  * </pre>
- * 
+ *
  * <!-- options-end -->
- * 
+ *
  * @author Mark Hall (mhall@cs.waikato.ac.nz) -- attribute selection code
  * @author Gabi Schmidberger (gabi@cs.waikato.ac.nz) -- attribute selection code
  * @author fracpete (fracpete at waikato dot ac dot nz) -- filter code
- * @version $Revision: 12660 $
+ * @version $Revision$
  */
 public class PrincipalComponents extends Filter implements OptionHandler,
   UnsupervisedFilter {
@@ -116,7 +116,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   protected int m_NumInstances;
 
   /** Correlation matrix for the original data. */
-  protected UpperSymmDenseMatrix m_Correlation;
+  protected double[][] m_Correlation;
 
   /**
    * If true, center (rather than standardize) the data and compute PCA from
@@ -171,7 +171,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Returns a string describing this filter.
-   * 
+   *
    * @return a description of the filter suitable for displaying in the
    *         explorer/experimenter gui
    */
@@ -187,7 +187,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Returns an enumeration describing the available options.
-   * 
+   *
    * @return an enumeration of all the available options.
    */
   @Override
@@ -218,39 +218,39 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   /**
    * Parses a list of options for this object.
    * <p/>
-   * 
+   *
    * <!-- options-start --> Valid options are:
    * <p/>
-   * 
+   *
    * <pre>
    * -C
    *  Center (rather than standardize) the
    *  data and compute PCA using the covariance (rather
    *   than the correlation) matrix.
    * </pre>
-   * 
+   *
    * <pre>
    * -R &lt;num&gt;
    *  Retain enough PC attributes to account
    *  for this proportion of variance in the original data.
    *  (default: 0.95)
    * </pre>
-   * 
+   *
    * <pre>
    * -A &lt;num&gt;
-   *  Maximum number of attributes to include in 
+   *  Maximum number of attributes to include in
    *  transformed attribute names.
    *  (-1 = include all, default: 5)
    * </pre>
-   * 
+   *
    * <pre>
    * -M &lt;num&gt;
    *  Maximum number of PC attributes to retain.
    *  (-1 = include all, default: -1)
    * </pre>
-   * 
+   *
    * <!-- options-end -->
-   * 
+   *
    * @param options the list of options as an array of strings
    * @throws Exception if an option is not supported
    */
@@ -285,7 +285,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Gets the current settings of the filter.
-   * 
+   *
    * @return an array of strings suitable for passing to setOptions
    */
   @Override
@@ -311,7 +311,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Returns the tip text for this property
-   * 
+   *
    * @return tip text for this property suitable for displaying in the
    *         explorer/experimenter gui
    */
@@ -323,7 +323,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   /**
    * Set whether to center (rather than standardize) the data. If set to true
    * then PCA is computed from the covariance rather than correlation matrix.
-   * 
+   *
    * @param center true if the data is to be centered rather than standardized
    */
   public void setCenterData(boolean center) {
@@ -333,7 +333,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   /**
    * Get whether to center (rather than standardize) the data. If true then PCA
    * is computed from the covariance rather than correlation matrix.
-   * 
+   *
    * @return true if the data is to be centered rather than standardized.
    */
   public boolean getCenterData() {
@@ -342,7 +342,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Returns the tip text for this property.
-   * 
+   *
    * @return tip text for this property suitable for displaying in the
    *         explorer/experimenter gui
    */
@@ -353,7 +353,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   /**
    * Sets the amount of variance to account for when retaining principal
    * components.
-   * 
+   *
    * @param value the proportion of total variance to account for
    */
   public void setVarianceCovered(double value) {
@@ -363,7 +363,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   /**
    * Gets the proportion of total variance to account for when retaining
    * principal components.
-   * 
+   *
    * @return the proportion of variance to account for
    */
   public double getVarianceCovered() {
@@ -372,7 +372,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Returns the tip text for this property.
-   * 
+   *
    * @return tip text for this property suitable for displaying in the
    *         explorer/experimenter gui
    */
@@ -383,7 +383,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   /**
    * Sets maximum number of attributes to include in transformed attribute
    * names.
-   * 
+   *
    * @param value the maximum number of attributes
    */
   public void setMaximumAttributeNames(int value) {
@@ -393,7 +393,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   /**
    * Gets maximum number of attributes to include in transformed attribute
    * names.
-   * 
+   *
    * @return the maximum number of attributes
    */
   public int getMaximumAttributeNames() {
@@ -402,7 +402,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Returns the tip text for this property.
-   * 
+   *
    * @return tip text for this property suitable for displaying in the
    *         explorer/experimenter gui
    */
@@ -412,7 +412,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Sets maximum number of PC attributes to retain.
-   * 
+   *
    * @param value the maximum number of attributes
    */
   public void setMaximumAttributes(int value) {
@@ -421,7 +421,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Gets maximum number of PC attributes to retain.
-   * 
+   *
    * @return the maximum number of attributes
    */
   public int getMaximumAttributes() {
@@ -430,7 +430,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Returns the capabilities of this evaluator.
-   * 
+   *
    * @return the capabilities of this evaluator
    * @see Capabilities
    */
@@ -461,7 +461,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
    * case the output format cannot be returned immediately, i.e.,
    * immediateOutputFormat() returns false, then this method will be called from
    * batchFinished().
-   * 
+   *
    * @param inputFormat the input format to base the output format on
    * @return the output format
    * @throws Exception in case the determination goes wrong
@@ -569,7 +569,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
     }
 
     // now compute the covariance matrix
-    m_Correlation = new UpperSymmDenseMatrix(m_NumAttribs);
+    m_Correlation = new double[m_NumAttribs][m_NumAttribs];
 
     for (int i = 0; i < m_NumAttribs; i++) {
       for (int j = i; j < m_NumAttribs; j++) {
@@ -580,14 +580,15 @@ public class PrincipalComponents extends Filter implements OptionHandler,
         }
 
         cov /= m_TrainInstances.numInstances() - 1;
-        m_Correlation.set(i, j, cov);
+        m_Correlation[i][j] = cov;
+        m_Correlation[j][i] = cov;
       }
     }
   }
 
   /**
    * Transform an instance in original (unormalized) format.
-   * 
+   *
    * @param instance an instance in the original (unormalized) format
    * @return a transformed instance
    * @throws Exception if instance can't be transformed
@@ -668,7 +669,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Initializes the filter with the given input data.
-   * 
+   *
    * @param instances the data to process
    * @throws Exception in case the processing goes wrong
    * @see #batchFinished()
@@ -679,6 +680,9 @@ public class PrincipalComponents extends Filter implements OptionHandler,
     Vector<Integer> deleteCols;
     int[] todelete;
     double[][] v;
+    Matrix corr;
+    EigenvalueDecomposition eig;
+    Matrix V;
 
     m_TrainInstances = new Instances(instances);
 
@@ -734,11 +738,17 @@ public class PrincipalComponents extends Filter implements OptionHandler,
     fillCovariance();
 
     // get eigen vectors/values
-
-    SymmDenseEVD evd = SymmDenseEVD.factorize(m_Correlation);
-
-    m_Eigenvectors = Matrices.getArray(evd.getEigenvectors());
-    m_Eigenvalues = evd.getEigenvalues();
+    corr = new Matrix(m_Correlation);
+    eig = corr.eig();
+    V = eig.getV();
+    v = new double[m_NumAttribs][m_NumAttribs];
+    for (i = 0; i < v.length; i++) {
+      for (j = 0; j < v[0].length; j++) {
+        v[i][j] = V.get(i, j);
+      }
+    }
+    m_Eigenvectors = v.clone();
+    m_Eigenvalues = eig.getRealEigenvalues().clone();
 
     // any eigenvalues less than 0 are not worth anything --- change to 0
     for (i = 0; i < m_Eigenvalues.length; i++) {
@@ -757,7 +767,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Sets the format of the input instances.
-   * 
+   *
    * @param instanceInfo an Instances object containing the input instance
    *          structure (any instances contained in the object are ignored -
    *          only the structure is required).
@@ -780,7 +790,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
   /**
    * Input an instance for filtering. Filter requires all training instances be
    * read before producing output.
-   * 
+   *
    * @param instance the input instance
    * @return true if the filtered instance may now be collected with output().
    * @throws IllegalStateException if no input format has been set
@@ -802,7 +812,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
     if (isFirstBatchDone()) {
       inst = convertInstance(instance);
       inst.setDataset(getOutputFormat());
-      push(inst, false); // No need to copy
+      push(inst);
       return true;
     } else {
       bufferInput(instance);
@@ -812,7 +822,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Signify that this batch of input to the filter is finished.
-   * 
+   *
    * @return true if there are instances pending output
    * @throws NullPointerException if no input structure has been defined,
    * @throws Exception if there was a problem finishing the batch.
@@ -836,7 +846,7 @@ public class PrincipalComponents extends Filter implements OptionHandler,
     for (i = 0; i < insts.numInstances(); i++) {
       inst = convertInstance(insts.instance(i));
       inst.setDataset(getOutputFormat());
-      push(inst, false); // No need to copy
+      push(inst);
     }
 
     flushInput();
@@ -848,12 +858,12 @@ public class PrincipalComponents extends Filter implements OptionHandler,
 
   /**
    * Returns the revision string.
-   * 
+   *
    * @return the revision
    */
   @Override
   public String getRevision() {
-    return RevisionUtils.extract("$Revision: 12660 $");
+    return RevisionUtils.extract("$Revision$");
   }
 
   /**

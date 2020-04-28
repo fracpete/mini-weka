@@ -21,21 +21,27 @@
 
 package weka.classifiers.functions;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-
-import no.uib.cipr.matrix.*;
-import no.uib.cipr.matrix.Matrix;
-
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.evaluation.RegressionAnalysis;
-import weka.core.*;
+import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
-import weka.core.matrix.QRDecomposition;
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.Option;
+import weka.core.OptionHandler;
+import weka.core.RevisionUtils;
+import weka.core.SelectedTag;
+import weka.core.Tag;
+import weka.core.Utils;
+import weka.core.WeightedInstancesHandler;
+import weka.core.matrix.Matrix;
 import weka.filters.Filter;
 import weka.filters.supervised.attribute.NominalToBinary;
 import weka.filters.unsupervised.attribute.ReplaceMissingValues;
+
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  <!-- globalinfo-start -->
@@ -44,48 +50,42 @@ import weka.filters.unsupervised.attribute.ReplaceMissingValues;
  * weighted instances.
  * <p/>
  <!-- globalinfo-end -->
- * 
+ *
  <!-- options-start -->
  * Valid options are:
  * <p/>
- * 
+ *
  * <pre>
  * -S &lt;number of selection method&gt;
  *  Set the attribute selection method to use. 1 = None, 2 = Greedy.
  *  (default 0 = M5' method)
  * </pre>
- * 
+ *
  * <pre>
  * -C
  *  Do not try to eliminate colinear attributes.
  * </pre>
- * 
+ *
  * <pre>
  * -R &lt;double&gt;
  *  Set ridge parameter (default 1.0e-8).
  * </pre>
- * 
+ *
  * <pre>
  * -minimal
  *  Conserve memory, don't keep dataset header and means/stdevs.
  *  Model cannot be printed out if this option is enabled. (default: keep data)
  * </pre>
- * 
+ *
  * <pre>
  * -additional-stats
  *  Output additional statistics.
  * </pre>
- * 
+ *
  * <pre>
  * -output-debug-info
  *  If set, classifier is run in debug mode and
  *  may output additional info to the console
- * </pre>
- * 
- * <pre>
- * -do-not-check-capabilities
- *  If set, classifier capabilities are not checked before classifier is built
- *  (use with caution).
  * </pre>
  *
  * <pre>
@@ -93,11 +93,12 @@ import weka.filters.unsupervised.attribute.ReplaceMissingValues;
  *  If set, classifier capabilities are not checked before classifier is built
  *  (use with caution).
  * </pre>
+ *
  <!-- options-end -->
- * 
+ *
  * @author Eibe Frank (eibe@cs.waikato.ac.nz)
  * @author Len Trigg (trigg@cs.waikato.ac.nz)
- * @version $Revision: 15519 $
+ * @version $Revision$
  */
 public class LinearRegression extends AbstractClassifier implements
   OptionHandler, WeightedInstancesHandler {
@@ -148,16 +149,12 @@ public class LinearRegression extends AbstractClassifier implements
   protected boolean m_EliminateColinearAttributes = true;
   /** Turn off all checks and conversions? */
   protected boolean m_checksTurnedOff = false;
-  /** Use QR decomposition */
-  protected boolean m_useQRDecomposition = false;
   /** The ridge parameter */
   protected double m_Ridge = 1.0e-8;
   /** Conserve memory? */
   protected boolean m_Minimal = false;
   /** Model already built? */
   protected boolean m_ModelBuilt = false;
-  /** True if the model is a zero R one */
-  protected boolean m_isZeroR;
   /** The degrees of freedom of the regression model */
   private int m_df;
   /** The R-squared value of the regression model */
@@ -230,15 +227,6 @@ public class LinearRegression extends AbstractClassifier implements
   @Override
   public void buildClassifier(Instances data) throws Exception {
     m_ModelBuilt = false;
-    m_isZeroR = false;
-
-    if (data.numInstances() == 1) {
-      m_Coefficients = new double[1];
-      m_Coefficients[0] = data.instance(0).classValue();
-      m_SelectedAttributes = new boolean[data.numAttributes()];
-      m_isZeroR = true;
-      return;
-    }
 
     if (!m_checksTurnedOff) {
       // can classifier handle the data?
@@ -357,7 +345,7 @@ public class LinearRegression extends AbstractClassifier implements
 
     // Transform the input instance
     Instance transformedInstance = instance;
-    if (!m_checksTurnedOff && !m_isZeroR) {
+    if (!m_checksTurnedOff) {
       m_TransformFilter.input(transformedInstance);
       m_TransformFilter.batchFinished();
       transformedInstance = m_TransformFilter.output();
@@ -474,7 +462,7 @@ public class LinearRegression extends AbstractClassifier implements
    */
   @Override
   public Enumeration<Option> listOptions() {
-    java.util.Vector<Option> newVector = new java.util.Vector<Option>();
+    Vector<Option> newVector = new Vector<Option>();
 
     newVector.addElement(new Option("\tSet the attribute selection method"
       + " to use. 1 = None, 2 = Greedy.\n" + "\t(default 0 = M5' method)", "S",
@@ -482,6 +470,10 @@ public class LinearRegression extends AbstractClassifier implements
 
     newVector.addElement(new Option("\tDo not try to eliminate colinear"
       + " attributes.\n", "C", 0, "-C"));
+
+    newVector.addElement(new Option("\tSet the attribute selection method"
+      + " to use. 1 = None, 2 = Greedy.\n" + "\t(default 0 = M5' method)", "S",
+      1, "-S <number of selection method>"));
 
     newVector.addElement(new Option(
       "\tSet ridge parameter (default 1.0e-8).\n", "R", 1, "-R <double>"));
@@ -494,9 +486,6 @@ public class LinearRegression extends AbstractClassifier implements
     newVector.addElement(new Option("\tOutput additional statistics.",
       "additional-stats", 0, "-additional-stats"));
 
-    newVector.addElement(new Option("\tUse QR decomposition to find coefficients",
-            "use-qr", 0, "-use-qr"));
-
     newVector.addAll(Collections.list(super.listOptions()));
 
     return newVector.elements();
@@ -504,7 +493,7 @@ public class LinearRegression extends AbstractClassifier implements
 
   /**
    * Returns the coefficients for this linear model.
-   * 
+   *
    * @return the coefficients for this linear model
    */
   public double[] coefficients() {
@@ -522,12 +511,12 @@ public class LinearRegression extends AbstractClassifier implements
 
   /**
    * Gets the current settings of the classifier.
-   * 
+   *
    * @return an array of strings suitable for passing to setOptions
    */
   @Override
   public String[] getOptions() {
-    java.util.Vector<String> result = new java.util.Vector<String>();
+    Vector<String> result = new Vector<String>();
 
     result.add("-S");
     result.add("" + getAttributeSelectionMethod().getSelectedTag().getID());
@@ -545,10 +534,6 @@ public class LinearRegression extends AbstractClassifier implements
 
     if (getOutputAdditionalStats()) {
       result.add("-additional-stats");
-    }
-
-    if (getUseQRDecomposition()) {
-      result.add("-use-qr");
     }
 
     Collections.addAll(result, super.getOptions());
@@ -603,10 +588,6 @@ public class LinearRegression extends AbstractClassifier implements
    *  (use with caution).
    * </pre>
    *
-   * <pre>
-   * -use-qr
-   *  If set, QR decomposition will be used to find coefficients.
-   * </pre>
    <!-- options-end -->
    *
    * @param options the list of options as an array of strings
@@ -633,9 +614,8 @@ public class LinearRegression extends AbstractClassifier implements
 
     setOutputAdditionalStats(Utils.getFlag("additional-stats", options));
 
-    setUseQRDecomposition(Utils.getFlag("use-qr", options));
-
     super.setOptions(options);
+    Utils.checkForRemainingOptions(options);
   }
 
   /**
@@ -727,7 +707,7 @@ public class LinearRegression extends AbstractClassifier implements
 
   /**
    * Gets the method used to select attributes for use in the linear regression.
-   * 
+   *
    * @return the method to use.
    */
   public SelectedTag getAttributeSelectionMethod() {
@@ -760,7 +740,7 @@ public class LinearRegression extends AbstractClassifier implements
   /**
    * Returns whether to be more memory conservative or being able to output the
    * model as string.
-   * 
+   *
    * @return true if memory conservation is preferred over outputting model
    *         description
    */
@@ -792,7 +772,7 @@ public class LinearRegression extends AbstractClassifier implements
   /**
    * Get whether to output additional statistics (such as std. deviation of
    * coefficients and t-statistics
-   * 
+   *
    * @return true if additional stats are to be output
    */
   public boolean getOutputAdditionalStats() {
@@ -807,34 +787,6 @@ public class LinearRegression extends AbstractClassifier implements
    */
   public void setOutputAdditionalStats(boolean additional) {
     m_outputAdditionalStats = additional;
-  }
-
-  /**
-   * Returns the tip text for this property.
-   *
-   * @return tip text for this property suitable for displaying in the
-   *         explorer/experimenter gui
-   */
-  public String useQRDecompositionTipText() {
-    return "Use QR decomposition to find the coefficients";
-  }
-
-  /**
-   * Get whether to use QR decomposition.
-   *
-   * @return true if QR decomposition is to be used
-   */
-  public boolean getUseQRDecomposition() {
-    return m_useQRDecomposition;
-  }
-
-  /**
-   * Set whether to use QR decomposition.
-   *
-   * @param useQR true if QR decomposition is to be used
-   */
-  public void setUseQRDecomposition(boolean useQR) {
-    m_useQRDecomposition = useQR;
   }
 
   /**
@@ -1103,29 +1055,17 @@ public class LinearRegression extends AbstractClassifier implements
     }
 
     // Check whether there are still attributes left
-    Matrix independentTransposed = null;
-    Matrix independent = null;
-    Vector dependent = null;
+    Matrix independent = null, dependent = null;
     if (numAttributes > 0) {
-      if (!m_useQRDecomposition) {
-        independentTransposed = new DenseMatrix(numAttributes, m_TransformedData.numInstances());
-        dependent = new DenseVector(m_TransformedData.numInstances());
-      } else {
-        if (m_Ridge <= 0) {
-          independent = new DenseMatrix(m_TransformedData.numInstances(), numAttributes);
-          dependent = new DenseVector(m_TransformedData.numInstances());
-        } else {
-          independent = new DenseMatrix(m_TransformedData.numInstances() + numAttributes, numAttributes);
-          dependent = new DenseVector(m_TransformedData.numInstances() + numAttributes);
-        }
-      }
+      independent = new Matrix(m_TransformedData.numInstances(), numAttributes);
+      dependent = new Matrix(m_TransformedData.numInstances(), 1);
       for (int i = 0; i < m_TransformedData.numInstances(); i++) {
         Instance inst = m_TransformedData.instance(i);
         double sqrt_weight = Math.sqrt(inst.weight());
-        int index = 0;
+        int column = 0;
         for (int j = 0; j < m_TransformedData.numAttributes(); j++) {
           if (j == m_ClassIndex) {
-            dependent.set(i, inst.classValue() * sqrt_weight);
+            dependent.set(i, 0, inst.classValue() * sqrt_weight);
           } else {
             if (selectedAttributes[j]) {
               double value = inst.value(j) - m_Means[j];
@@ -1135,21 +1075,11 @@ public class LinearRegression extends AbstractClassifier implements
               if (!m_checksTurnedOff) {
                 value /= m_StdDevs[j];
               }
-              if (!m_useQRDecomposition) {
-                independentTransposed.set(index, i, value * sqrt_weight);
-              } else {
-                independent.set(i, index, value * sqrt_weight);
-              }
-              index++;
+              independent.set(i, column, value * sqrt_weight);
+              column++;
             }
           }
         }
-      }
-    }
-    if (m_useQRDecomposition && m_Ridge > 0) {
-      double sqrtRidge = Math.sqrt(m_Ridge);
-      for (int i = 0; i < numAttributes; i++) {
-        independent.set(m_TransformedData.numInstances() + i, i, sqrtRidge);
       }
     }
 
@@ -1158,33 +1088,11 @@ public class LinearRegression extends AbstractClassifier implements
     // by the ridge constant.)
     double[] coefficients = new double[numAttributes + 1];
     if (numAttributes > 0) {
-
-      if (!m_useQRDecomposition) { // Use Cholesky based on covariance matrix
-        Vector aTy = independentTransposed.mult(dependent, new DenseVector(numAttributes));
-        Matrix aTa = new UpperSPDDenseMatrix(numAttributes).rank1(independentTransposed);
-        independentTransposed = null;
-        dependent = null;
-
-        double ridge = getRidge();
-        for (int i = 0; i < numAttributes; i++) {
-          aTa.add(i, i, ridge);
-        }
-        Vector coeffsWithoutIntercept = aTa.solve(aTy, new DenseVector(numAttributes));
-        System.arraycopy(((DenseVector) coeffsWithoutIntercept).getData(), 0, coefficients, 0, numAttributes);
-      } else { // Use QR decomposition
-        QRP qrp = QRP.factorize(independent);
-        independent = null;
-        Matrix Q = qrp.getQ();
-        Matrix R = new UpperTriangDenseMatrix(qrp.getR(), false);
-        Matrix P = qrp.getP();
-        DenseVector cPlusd = (DenseVector)Q.transMult(dependent, new DenseVector(dependent.size()));
-        dependent = null;
-        Vector c = new DenseVector(Arrays.copyOf(cPlusd.getData(), numAttributes));
-        Vector y = R.solve(c, new DenseVector(numAttributes));
-        Vector coeffsWithoutIntercept = P.mult(y, new DenseVector(numAttributes));
-        System.arraycopy(((DenseVector) coeffsWithoutIntercept).getData(), 0, coefficients, 0, numAttributes);
-      }
-  }
+      double[] coeffsWithoutIntercept =
+        independent.regression(dependent, m_Ridge).getCoefficients();
+      System.arraycopy(coeffsWithoutIntercept, 0, coefficients, 0,
+        numAttributes);
+    }
     coefficients[numAttributes] = m_ClassMean;
 
     // Convert coefficients into original scale
@@ -1215,6 +1123,6 @@ public class LinearRegression extends AbstractClassifier implements
    */
   @Override
   public String getRevision() {
-    return RevisionUtils.extract("$Revision: 15519 $");
+    return RevisionUtils.extract("$Revision$");
   }
 }
