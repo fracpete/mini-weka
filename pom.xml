@@ -142,20 +142,6 @@
       <version>11b-20160615</version>
       <scope>compile</scope>
     </dependency>
-
-    <dependency>
-      <groupId>com.github.vbmacher</groupId>
-      <artifactId>java-cup-runtime</artifactId>
-      <version>11b-20160615</version>
-    </dependency>
-
-    <dependency>
-      <groupId>de.jflex</groupId>
-      <artifactId>jflex</artifactId>
-      <version>1.4.3</version>
-      <type>jar</type>
-      <scope>compile</scope>
-    </dependency>
   </dependencies>
 
   <properties>
@@ -279,24 +265,15 @@
         </executions>
       </plugin>
 
-      <!-- for generating the parsers: mvn exec:java -->
+      <!-- execute via: mvn parsergen:build -->
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>java</goal>
-            </goals>
-          </execution>
-        </executions>
+        <groupId>com.github.fracpete</groupId>
+        <artifactId>parsergen-maven-plugin</artifactId>
+        <version>0.0.1</version>
         <configuration>
-          <mainClass>weka.core.GenerateParser</mainClass>
-          <workingDirectory>.</workingDirectory>
-          <arguments>
-            <argument>${project.basedir}/src/main/resources/weka/core/expressionlanguage/parser</argument>
-          </arguments>
+          <directories>
+            <directory>${project.basedir}/src/main/resources/weka/core/expressionlanguage/parser</directory>
+          </directories>
         </configuration>
       </plugin>
     </plugins>
