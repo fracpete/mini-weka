@@ -28,6 +28,9 @@ BLACKLISTED_FILES=[
     "/trunk/weka/src/main/java/weka/core/WekaPackageLibIsolatingClassLoader.java",
     "/trunk/weka/src/main/java/weka/core/WekaPackageManager.java",
     "/trunk/weka/src/main/java/weka/core/WekaPackageClassLoaderManager.java",
+    # evaluation
+    "/trunk/weka/src/main/java/weka/classifiers/Evaluation.java",
+    "/trunk/weka/src/main/java/weka/classifiers/evaluation/Evaluation.java",
     # javadoc
     "/trunk/weka/src/main/java/weka/core/AllJavadoc.java",
     "/trunk/weka/src/main/java/weka/core/Javadoc.java",
