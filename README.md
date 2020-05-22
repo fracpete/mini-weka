@@ -58,40 +58,6 @@ Add the following dependency to your `pom.xml` to use the latest release of *min
 </dependency>
 ```
 
-## Use
-
-Snapshots of mini-weka get deployed to:
-
-https://oss.sonatype.org/content/repositories/snapshots/
-
-Add the following to your pom.xml to have access to this snapshots:
-
-```xml
-  <repositories>
-    <repository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-```
-
-And the following dependency (adjust version if necessary):
-
-```xml
-    <dependency>
-      <groupId>com.github.fracpete</groupId>
-      <artifactId>mini-weka</artifactId>
-      <version>3.9.5-SNAPSHOT</version>
-    </dependency>
-```
-
 ## Updating
 
 ### Update files
