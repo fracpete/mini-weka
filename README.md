@@ -4,10 +4,11 @@ Stripped down fork of Weka 3.9.4 without package manager and user interface.
 ## Code base
 
 The code base of *mini-weka* is synced (manually) with Weka's subversion repository, 
-`trunk` branch up to the following revision:
+[trunk branch](https://svn.cms.waikato.ac.nz/svn/weka/trunk/) up to the following 
+revision:
 
 ```
-r15559
+r15580
 ```
 
 
