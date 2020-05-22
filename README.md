@@ -3,8 +3,8 @@ Stripped down fork of Weka 3.9.4 without package manager and user interface.
 
 ## Code base
 
-The code base of *mini-weka* is synced with Weka's subversion repository, `trunk`
-branch up to the following revision:
+The code base of *mini-weka* is synced (manually) with Weka's subversion repository, 
+`trunk` branch up to the following revision:
 
 ```
 r15559 - 2020-04-17 20:13:17 +1200 (Fri, 17 Apr 2020)
@@ -68,4 +68,9 @@ python3 update.py \
 ### Commit
 
 * Once compilation and unit tests work, commit all changes
-* Update the revision in this README
+* Update the revision and its timestamp at the top of this README
+* Generate the timestamp for this revision by outputting the log entry of that revision:
+
+  ```commandline
+  svn log -r REV
+  ```
