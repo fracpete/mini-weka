@@ -21,14 +21,14 @@
 
 package weka.filters.unsupervised.attribute;
 
-import weka.core.Capabilities;
-import weka.core.DictionaryBuilder;
-import weka.core.Environment;
-import weka.core.EnvironmentHandler;
-import weka.core.Instance;
-import weka.core.Instances;
-import weka.core.OptionMetadata;
-import weka.core.WeightedInstancesHandler;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+
+import javax.swing.JFileChooser;
+
+import weka.core.*;
 import weka.core.stemmers.NullStemmer;
 import weka.core.stemmers.Stemmer;
 import weka.core.stopwords.Null;
@@ -36,11 +36,6 @@ import weka.core.stopwords.StopwordsHandler;
 import weka.core.tokenizers.Tokenizer;
 import weka.filters.SimpleStreamFilter;
 import weka.filters.UnsupervisedFilter;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 
 /**
  * <!-- globalinfo-start --> Converts String attributes into a set of attributes
@@ -140,7 +135,7 @@ import java.io.Reader;
  * <!-- options-end -->
  *
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
- * @version $Revision: 14508 $
+ * @version $Revision: 15573 $
  */
 public class FixedDictionaryStringToWordVector extends SimpleStreamFilter
   implements UnsupervisedFilter, EnvironmentHandler, WeightedInstancesHandler {
@@ -381,7 +376,7 @@ public class FixedDictionaryStringToWordVector extends SimpleStreamFilter
     description = "Set whether the word frequencies should be transformed into\n"
       + "log(1+fij), where fij is the frequency of word i in document (instance) "
       + "j.",
-    commandLineParamName = "T", commandLineParamSynopsis = "-T",
+    commandLineParamName = "T", commandLineParamSynopsis = "-T", commandLineParamIsFlag = true,
     displayOrder = 7)
   public void setTFTransform(boolean TFTransform) {
     m_vectorizer.setTFTransform(TFTransform);
@@ -411,7 +406,7 @@ public class FixedDictionaryStringToWordVector extends SimpleStreamFilter
     description = "Set whether the word frequencies in a document should be "
       + "transformed into\nfij*log(num of Docs/num of docs with word i), "
       + "where fij is the frequency\nof word i in document (instance) j.",
-    commandLineParamName = "I", commandLineParamSynopsis = "-I",
+    commandLineParamName = "I", commandLineParamSynopsis = "-I", commandLineParamIsFlag = true,
     displayOrder = 8)
   public void setIDFTransform(boolean IDFTransform) {
     m_vectorizer.setIDFTransform(IDFTransform);

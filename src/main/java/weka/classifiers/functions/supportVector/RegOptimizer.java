@@ -56,7 +56,7 @@ import weka.core.Utils;
  * <!-- options-end -->
  * 
  * @author Remco Bouckaert (remco@cs.waikato.ac.nz,rrb@xm.co.nz)
- * @version $Revision: 12533 $
+ * @version $Revision: 15561 $
  */
 public class RegOptimizer implements OptionHandler, Serializable,
   RevisionHandler {
@@ -316,6 +316,8 @@ public class RegOptimizer implements OptionHandler, Serializable,
     m_b = 0.0;
     m_nEvals = 0;
     m_nCacheHits = -1;
+
+    m_weights = null;
   }
 
   /**
@@ -330,8 +332,9 @@ public class RegOptimizer implements OptionHandler, Serializable,
     m_nEvals = m_kernel.numEvals();
     m_nCacheHits = m_kernel.numCacheHits();
 
-    if ((m_SVM.getKernel() instanceof PolyKernel)
-      && ((PolyKernel) m_SVM.getKernel()).getExponent() == 1.0) {
+    // Check whether machine is linear
+    if ((m_kernel instanceof PolyKernel) && (((PolyKernel) m_kernel).getExponent() == 1.0) &&
+            !(((PolyKernel) m_kernel).getUseLowerOrder()) && !(m_kernel instanceof NormalizedPolyKernel)) {
       // convert alpha's to weights
       double[] weights = new double[m_data.numAttributes()];
       for (int k = m_supportVectors.getNext(-1); k != -1; k = m_supportVectors
@@ -585,6 +588,6 @@ public class RegOptimizer implements OptionHandler, Serializable,
    */
   @Override
   public String getRevision() {
-    return RevisionUtils.extract("$Revision: 12533 $");
+    return RevisionUtils.extract("$Revision: 15561 $");
   }
 }

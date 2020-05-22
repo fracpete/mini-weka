@@ -21,13 +21,6 @@
 
 package weka.core;
 
-import weka.core.stemmers.NullStemmer;
-import weka.core.stemmers.Stemmer;
-import weka.core.stopwords.Null;
-import weka.core.stopwords.StopwordsHandler;
-import weka.core.tokenizers.Tokenizer;
-import weka.core.tokenizers.WordTokenizer;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -55,6 +48,13 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import weka.core.stemmers.NullStemmer;
+import weka.core.stemmers.Stemmer;
+import weka.core.stopwords.Null;
+import weka.core.stopwords.StopwordsHandler;
+import weka.core.tokenizers.Tokenizer;
+import weka.core.tokenizers.WordTokenizer;
+
 /**
  * Class for building and maintaining a dictionary of terms. Has methods for
  * loading, saving and aggregating dictionaries. Supports loading/saving in
@@ -75,7 +75,7 @@ import java.util.Vector;
  * is the number of documents that the term has occurred in.
  * 
  * @author Mark Hall (mhall{[at]}pentaho{[dot]}com)
- * @version $Revision: 14442 $
+ * @version $Revision: 15573 $
  */
 public class DictionaryBuilder implements Aggregateable<DictionaryBuilder>,
   OptionHandler, Serializable {
@@ -1838,6 +1838,19 @@ public class DictionaryBuilder implements Aggregateable<DictionaryBuilder>,
       String line = br.readLine();
       int index = 0;
       if (line != null) {
+
+        if (line.startsWith("@@@numDocs=") && line.endsWith("@@@")) {
+          String numDocs = line.replace("@@@numDocs=","")
+            .replace("@@@","");
+          try {
+            m_count = Integer.parseInt(numDocs.trim());
+          } catch (NumberFormatException ex) {
+            System.err.println("Unable to parse total number of documents '" +
+              numDocs +"'");
+          }
+          line = br.readLine();
+        }
+
         if (line.startsWith("@@@") && line.endsWith("@@@")) {
           String avgS = line.replace("@@@", "");
           try {
@@ -1891,6 +1904,13 @@ public class DictionaryBuilder implements Aggregateable<DictionaryBuilder>,
     } finally {
       br.close();
     }
+
+    if (getIDFTransform() && m_count == 0) {
+      throw new IOException("Unable to generate TF-IDF values because there is "
+        + "no information in the dictionary specifying how many documents were used "
+        + "to create it.");
+    }
+
     try {
       m_outputFormat = getVectorizedFormat();
     } catch (Exception ex) {
@@ -1909,12 +1929,25 @@ public class DictionaryBuilder implements Aggregateable<DictionaryBuilder>,
     ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(is));
     try {
       List<Object> holder = (List<Object>) ois.readObject();
-      m_avgDocLength = (Double) holder.get(0);
-      m_consolidatedDict = (Map<String, int[]>) holder.get(1);
+      m_count = (Integer) holder.get(0);
+      m_avgDocLength = (Double) holder.get(1);
+      m_consolidatedDict = (Map<String, int[]>) holder.get(2);
     } catch (ClassNotFoundException ex) {
       throw new IOException(ex);
     } finally {
       ois.close();
+    }
+
+    if (getIDFTransform() && m_count == 0) {
+      throw new IOException("Unable to generate TF-IDF values because there is "
+        + "no information in the dictionary specifying how many documents were used "
+        + "to create it.");
+    }
+
+    try {
+      m_outputFormat = getVectorizedFormat();
+    } catch (Exception ex) {
+      throw new IOException(ex);
     }
   }
 
@@ -1962,6 +1995,7 @@ public class DictionaryBuilder implements Aggregateable<DictionaryBuilder>,
 
     BufferedWriter br = new BufferedWriter(writer);
     try {
+      br.write("@@@numDocs=" + m_count + "@@@\n");
       if (m_avgDocLength > 0) {
         br.write("@@@" + m_avgDocLength + "@@@\n");
       }
@@ -1993,6 +2027,7 @@ public class DictionaryBuilder implements Aggregateable<DictionaryBuilder>,
     ObjectOutputStream oos =
       new ObjectOutputStream(new BufferedOutputStream(os));
     List<Object> holder = new ArrayList<Object>();
+    holder.add(m_count);
     holder.add(m_avgDocLength);
     holder.add(m_consolidatedDict);
     try {
