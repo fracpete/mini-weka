@@ -1,5 +1,7 @@
 # mini-weka
-Stripped down fork of Weka 3.9.4 without package manager and user interface.
+Stripped down fork of Weka 3.9.x branch (HEAD) without package manager and user interface.
+Also reverted classes to pre-MTJ matrix versions (PrincipalComponents, LinearRegression, GaussianProcesses, 
+MultiVariateGaussianEstimator) to achieve a pure Java library with minimal dependencies (only java-cup-runtime).
 
 ## Code base
 
@@ -8,7 +10,52 @@ The code base of *mini-weka* is synced (manually) with Weka's subversion reposit
 revision:
 
 ```
-r15580
+r15580   # svn revision
+```
+
+## Maven
+
+### Snapshots
+
+Nightly snapshots get pushed out to Sonatype's snapshot repository. In order to use these, you need
+to add the configuration for this snapshot repository to your `pom.xml`:
+
+```xml 
+  <repositories>
+    <repository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype Nexus Snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+```
+
+As for adding *mini-weka* as a dependency to your project, add the following to your `pom.xml`:
+
+```xml
+<dependency>
+  <groupId>com.github.fracpete</groupId>
+  <artifactId>mini-weka</artifactId>
+  <version>3.9.15580-SNAPSHOT</version><!-- mini-weka-version -->
+</dependency>
+``` 
+
+### Releases
+
+Add the following dependency to your `pom.xml` to use the latest release of *mini-weka*:
+
+```xml
+<dependency>
+  <groupId>com.github.fracpete</groupId>
+  <artifactId>mini-weka</artifactId>
+  <version>3.9.15580</version>
+</dependency>
 ```
 
 
@@ -52,10 +99,6 @@ python3 update.py \
   `BLACKLISTED_FILES` list
 * Directories that should not end up in the code base need to be added to the
   `BLACKLISTED_PATHS`
-* Remove any occurrences of the following annotations
-
-  * `@ProgrammaticProperty`
-  * `@FilePropertyMetadata`
 
 ### Run unit tests
 
@@ -69,4 +112,3 @@ python3 update.py \
 ### Commit
 
 * Once compilation and unit tests work, commit all changes
-* Update the revision at the top of this README

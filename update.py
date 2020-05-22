@@ -4,7 +4,8 @@ import shutil
 import subprocess
 import traceback
 
-PREFIX = "/trunk/weka/"
+SVN_PREFIX = "/trunk/weka/"
+""" the prefix in svn paths """
 
 BLACKLISTED_FILES=[
     # maven
@@ -72,7 +73,26 @@ BLACKLISTED_PATHS=[
     "/trunk/weka/src/main/java/weka/classifiers/xml",
 ]
 
+POM_VERSION_TAG = "<!-- mini-weka-version -->"
+""" Comment tag in pom.xml to identify the version """
+
+POM_VERSION_TEMPLATE = "  <version>3.9.%i-SNAPSHOT</version><!-- mini-weka-version -->\n"
+""" Template for inserting the new version """
+
+README_REVISION_COMMENT = "# svn revision"
+""" The comment to identify the line with the revision """
+
+README_REVISION_TEMPLATE = "r%i   # svn revision\n"
+""" The template for the revision in the README """
+
+README_VERSION_TAG = "<!-- mini-weka-version -->"
+""" The tag to identify the line with the revision """
+
+README_VERSION_TEMPLATE = "  <version>3.9.%i-SNAPSHOT</version><!-- mini-weka-version -->\n"
+""" The template for the version in the README """
+
 logger = logging.getLogger("mini-weka-update")
+""" the logging instance to use """
 
 
 def output_process_info(res):
@@ -87,6 +107,111 @@ def output_process_info(res):
         logger.debug("stdout:\n%s" % res.stdout.decode("UTF-8"))
     if len(res.stderr) > 0:
         logger.debug("stderr:\n%s" % res.stderr.decode("UTF-8"))
+
+
+def update_pom(revision):
+    """
+    Updates the pom.xml with the revision.
+
+    :param revision: the final revision
+    :type revision: int
+    """
+
+    logger.info("Updating pom.xml")
+    with open("./pom.xml", "r") as pom_file:
+        lines = pom_file.readlines()
+    for i in range(len(lines)):
+        if POM_VERSION_TAG in lines[i]:
+            lines[i] = POM_VERSION_TEMPLATE % revision
+    with open("./pom.xml", "w") as pom_file:
+        pom_file.writelines(lines)
+
+
+def update_readme(revision):
+    """
+    Updates the README.md with the revision.
+
+    :param revision: the final revision
+    :type revision: int
+    """
+
+    logger.info("Updating README.md")
+    with open("./README.md", "r") as pom_file:
+        lines = pom_file.readlines()
+    for i in range(len(lines)):
+        if README_REVISION_COMMENT in lines[i]:
+            lines[i] = README_REVISION_TEMPLATE % revision
+        if README_VERSION_TAG in lines[i]:
+            lines[i] = README_VERSION_TEMPLATE % revision
+    with open("./README.md", "w") as pom_file:
+        pom_file.writelines(lines)
+
+
+def requires_post_processing(source):
+    """
+    Determines whether the file requires post-processing.
+    Looks for: @ProgrammaticProperty, @FilePropertyMetadata
+
+    :param source: the file to check
+    :type source: str
+    :return: True if the file requires post-processing
+    :rtype: bool
+    """
+    result = False
+    with open(source, "r") as source_file:
+        lines = source_file.readlines()
+    for line in lines:
+        if "@ProgrammaticProperty" in line:
+            result = True
+            break
+        if "@FilePropertyMetadata" in line:
+            result = True
+            break
+    return result
+
+
+def post_process(source, target):
+    """
+    Post-processes the source content before writing it to its target.
+
+    :param source: the source file
+    :type source: str
+    :param target: the target file
+    :type target: str
+    """
+
+    logger.info("Post-processing %s" % source)
+
+    with open(source, "r") as source_file:
+        lines = source_file.readlines()
+
+    filtered = []
+    is_open = False
+    for i in range(len(lines)):
+        if is_open:
+            if lines[i].strip().endswith(")"):
+                is_open = False
+                continue
+        # remove import of annotations
+        if "import " in lines[i]:
+            if "weka.gui.FilePropertyMetadata;" in lines[i]:
+                continue
+            if "weka.gui.ProgrammaticProperty;" in lines[i]:
+                continue
+        # remove annotations itself
+        if "@ProgrammaticProperty" in lines[i]:
+            continue
+        if "@FilePropertyMetadata" in lines[i]:
+            if lines[i].strip().endswith(")"):
+                continue
+            else:
+                is_open = True
+                continue
+        filtered.append(lines[i])
+
+    with open(target, "w") as target_file:
+        target_file.writelines(filtered)
+
 
 
 def process_paths(weka, paths, dry_run, verbose):
@@ -109,7 +234,7 @@ def process_paths(weka, paths, dry_run, verbose):
 
     for path in paths:
         # skip all paths that we don't care about
-        if not path.startswith(PREFIX):
+        if not path.startswith(SVN_PREFIX):
             continue
 
         # check whether path is blacklisted
@@ -137,7 +262,7 @@ def process_paths(weka, paths, dry_run, verbose):
 
         # generate filenames
         source = weka + path[len("/trunk"):]  # exclude "/trunk"
-        target = "./" + path[len("/trunk/weka/"):].replace("wekarefs", "")
+        target = "./" + path[len(SVN_PREFIX):].replace("wekarefs", "")
         if verbose:
             logger.info("%s\n->%s" % (source, target))
         result += 1
@@ -145,7 +270,10 @@ def process_paths(weka, paths, dry_run, verbose):
         # copy file
         if not dry_run:
             try:
-                shutil.copyfile(source, target)
+                if requires_post_processing(source):
+                    post_process(source, target)
+                else:
+                    shutil.copyfile(source, target)
             except:
                 logger.severe("Failed to copy %s to %s\n%s" % (source, target, traceback.format_exc()))
 
@@ -213,7 +341,7 @@ def update(weka, revision, svn=None, dry_run=False, verbose=False):
                 lines = parts[1].strip().split("\n")
                 paths = []
                 for line in lines:
-                    if (len(line.strip()) > 0) and ("/trunk/weka/src" in line):
+                    if (len(line.strip()) > 0) and (SVN_PREFIX + "/src" in line):
                         paths.append(line[line.find("/"):])
                 # process paths
                 if len(paths) > 0:
@@ -222,6 +350,8 @@ def update(weka, revision, svn=None, dry_run=False, verbose=False):
     logger.info("Number of files that needed updating: %s" % num_files)
 
     if not dry_run:
+        update_pom(revision_head)
+        update_readme(revision_head)
         rev_filename = "./update.rev"
         logger.info("Storing revision information in: %s" % rev_filename)
         with open(rev_filename, "w") as ref_file:
