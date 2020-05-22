@@ -1,7 +1,10 @@
 # mini-weka
 Stripped down fork of Weka 3.9.x branch (HEAD) without package manager and user interface.
-Also reverted classes to pre-MTJ matrix versions (PrincipalComponents, LinearRegression, GaussianProcesses, 
-MultiVariateGaussianEstimator) to achieve a pure Java library with minimal dependencies (only java-cup-runtime).
+PMML support and certain XML support (e.g., for serialization) was removed as well to reduced
+the number of dependencies. Finally, several classes got reverted to pre-MTJ matrix versions 
+(PrincipalComponents, LinearRegression, GaussianProcesses, MultiVariateGaussianEstimator).
+Overall, the changes achieved a pure Java library with minimal dependencies (only java-cup-runtime).
+
 
 ## Code base
 
