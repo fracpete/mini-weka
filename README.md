@@ -3,7 +3,7 @@ Stripped down fork of [Weka](https://www.cs.waikato.ac.nz/ml/weka/) 3.9.x branch
 PMML support and certain XML support (e.g., for serialization) was removed as well to reduced
 the number of dependencies. Finally, several classes got reverted to pre-MTJ matrix versions 
 (PrincipalComponents, LinearRegression, GaussianProcesses, MultiVariateGaussianEstimator).
-Overall, the changes achieved a pure Java library with minimal dependencies (only java-cup-runtime), making it a good candidate for inclusing in, e.g., Maven projects.
+Overall, the changes achieved a pure Java library with minimal dependencies (only java-cup-runtime), making it a good candidate for inclusing in, e.g., Maven projects. Apart from the aforementioned classes, models (Java serialized objects) are compatible between standard Weka and this fork.
 
 
 ## Code base
