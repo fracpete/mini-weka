@@ -1,5 +1,5 @@
 # mini-weka
-Stripped down fork of Weka 3.9.x branch (HEAD) without package manager and user interface.
+Stripped down fork of [Weka](https://www.cs.waikato.ac.nz/ml/weka/) 3.9.x branch (HEAD) without package manager and user interface.
 PMML support and certain XML support (e.g., for serialization) was removed as well to reduced
 the number of dependencies. Finally, several classes got reverted to pre-MTJ matrix versions 
 (PrincipalComponents, LinearRegression, GaussianProcesses, MultiVariateGaussianEstimator).
