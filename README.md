@@ -20,7 +20,7 @@ r15580   # svn revision
 
 ### Snapshots
 
-Nightly snapshots get pushed out to Sonatype's snapshot repository. In order to use these, you need
+Nightly snapshots get pushed out to [Sonatype's snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/com/github/fracpete/mini-weka/). In order to use these, you need
 to add the configuration for this snapshot repository to your `pom.xml`:
 
 ```xml 
