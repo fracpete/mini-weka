@@ -51,7 +51,7 @@ As for adding *mini-weka* as a dependency to your project, add the following to 
 
 ### Releases
 
-Add the following dependency to your `pom.xml` to use the latest release of *mini-weka*:
+Add the following dependency to your `pom.xml` to use the latest [release](https://search.maven.org/search?q=a:mini-weka) of *mini-weka*:
 
 ```xml
 <dependency>
