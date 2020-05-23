@@ -18,6 +18,13 @@ r15580   # svn revision
 
 ## Maven
 
+Snapshots and releases use the following versioning system:
+```
+X.Y.Z
+```
+* `X.Y` - the Weka major/minor release version
+* `Z` - the Weka subversion repository revision that the code base was synced to
+
 ### Snapshots
 
 Nightly snapshots get pushed out to [Sonatype's snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/com/github/fracpete/mini-weka/). In order to use these, you need
