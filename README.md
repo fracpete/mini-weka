@@ -13,7 +13,7 @@ The code base of *mini-weka* is synced (manually) with Weka's subversion reposit
 revision:
 
 ```
-r15580   # svn revision
+r15598   # svn revision
 ```
 
 ## Maven
@@ -52,7 +52,7 @@ As for adding *mini-weka* as a dependency to your project, add the following to 
 <dependency>
   <groupId>com.github.fracpete</groupId>
   <artifactId>mini-weka</artifactId>
-  <version>3.9.15580-SNAPSHOT</version><!-- mini-weka-version -->
+  <version>3.9.15598-SNAPSHOT</version><!-- mini-weka-version -->
 </dependency>
 ``` 
 
