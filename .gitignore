@@ -15,4 +15,3 @@ buildNumber.properties
 *.iml
 .idea/
 venv/
-update.rev
