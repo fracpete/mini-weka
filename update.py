@@ -344,7 +344,7 @@ def update(weka, revision, svn=None, dry_run=False, verbose=False):
                 lines = parts[1].strip().split("\n")
                 paths = []
                 for line in lines:
-                    if (len(line.strip()) > 0) and (SVN_PREFIX + "/src" in line):
+                    if (len(line.strip()) > 0) and (SVN_PREFIX + "src" in line):
                         paths.append(line[line.find("/"):])
                 # process paths
                 if len(paths) > 0:
