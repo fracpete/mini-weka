@@ -5,7 +5,7 @@
 
   <groupId>com.github.fracpete</groupId>
   <artifactId>mini-weka</artifactId>
-  <version>3.9.15598-SNAPSHOT</version><!-- mini-weka-version -->
+  <version>3.9.15750-SNAPSHOT</version><!-- mini-weka-version -->
   <packaging>jar</packaging>
 
   <name>mini-weka</name>

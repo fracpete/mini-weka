@@ -25,9 +25,12 @@ BLACKLISTED_FILES=[
     # package management related
     "/trunk/weka/src/main/java/weka/core/Utils.java",
     "/trunk/weka/src/main/java/weka/core/ResourceUtils.java",
+    "/trunk/weka/src/main/java/weka/core/PluginManager.java",
     "/trunk/weka/src/main/java/weka/core/WekaPackageLibIsolatingClassLoader.java",
     "/trunk/weka/src/main/java/weka/core/WekaPackageManager.java",
     "/trunk/weka/src/main/java/weka/core/WekaPackageClassLoaderManager.java",
+    "/trunk/weka/src/main/java/weka/core/converters/ConverterResources.java",
+    "/trunk/weka/src/main/java/weka/core/converters/ConverterUtils.java",
     # evaluation
     "/trunk/weka/src/main/java/weka/classifiers/Evaluation.java",
     "/trunk/weka/src/main/java/weka/classifiers/evaluation/Evaluation.java",
@@ -54,11 +57,25 @@ BLACKLISTED_FILES=[
     "/trunk/weka/src/test/java/weka/core/neighboursearch/AllTests.java",
     "/trunk/weka/src/test/java/weka/core/converters/AllTests.java",
     "/trunk/weka/src/test/java/weka/datagenerators/AllTests.java",
+    # config files
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.hsql",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.msaccess",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.mssqlserver",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.mssqlserver2005",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.mysql",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.odbc",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.oracle",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.postgresql",
+    "/trunk/weka/src/main/java/weka/experiment/DatabaseUtils.props.sqlite3",
+    "/trunk/weka/src/main/java/weka/experiment/remote.policy",
+    "/trunk/weka/src/main/java/weka/experiment/remote.policy.example",
 ]
 
 BLACKLISTED_PATHS=[
     # gui related classes
     "/trunk/weka/src/main/java/weka/gui",
+    "/trunk/weka/src/main/java/weka/knowledgeflow",
     # package management
     "/trunk/weka/src/main/java/weka/core/packageManagement",
     # scripts
