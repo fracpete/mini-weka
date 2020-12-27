@@ -342,7 +342,7 @@ def process_paths(weka, paths, dry_run, verbose):
                 else:
                     shutil.copyfile(source, target)
             except:
-                logger.severe("Failed to copy %s to %s\n%s" % (source, target, traceback.format_exc()))
+                logger.error("Failed to copy %s to %s\n%s" % (source, target, traceback.format_exc()))
 
     return result
 
