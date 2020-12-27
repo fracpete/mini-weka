@@ -93,6 +93,44 @@ BLACKLISTED_PATHS=[
     "/trunk/weka/src/main/java/weka/classifiers/xml",
 ]
 
+MODIFIED_FILES = [
+    "/trunk/weka/src/main/java/weka/attributeSelection/AttributeSelection.java",
+    "/trunk/weka/src/main/java/weka/attributeSelection/ClassifierSubsetEval.java",
+    "/trunk/weka/src/main/java/weka/attributeSelection/WrapperSubsetEval.java",
+    "/trunk/weka/src/main/java/weka/classifiers/evaluation/AbstractEvaluationMetric.java",
+    "/trunk/weka/src/main/java/weka/classifiers/evaluation/Evaluation.java",
+    "/trunk/weka/src/main/java/weka/classifiers/evaluation/EvaluationMetricHelper.java",
+    "/trunk/weka/src/main/java/weka/classifiers/Evaluation.java",
+    "/trunk/weka/src/main/java/weka/classifiers/functions/Logistic.java",
+    "/trunk/weka/src/main/java/weka/clusterers/ClusterEvaluation.java",
+    "/trunk/weka/src/main/java/weka/core/converters/ConverterUtils.java",
+    "/trunk/weka/src/main/java/weka/core/CheckGOE.java",
+    "/trunk/weka/src/main/java/weka/core/DictionaryBuilder.java",
+    "/trunk/weka/src/main/java/weka/core/EnumHelper.java",
+    "/trunk/weka/src/main/java/weka/core/InheritanceUtils.java",
+    "/trunk/weka/src/main/java/weka/core/OptionMetaData.java",
+    "/trunk/weka/src/main/java/weka/core/ResourceUtils.java",
+    "/trunk/weka/src/main/java/weka/core/SerializationHelper.java",
+    "/trunk/weka/src/main/java/weka/core/SerializedObject.java",
+    "/trunk/weka/src/main/java/weka/core/SystemInfo.java",
+    "/trunk/weka/src/main/java/weka/core/Utils.java",
+    "/trunk/weka/src/main/java/weka/estimators/MultivariateGaussianEstimator.java",
+    "/trunk/weka/src/main/java/weka/filters/supervised/attribute/AddClassification.java",
+    "/trunk/weka/src/main/java/weka/filters/unsupervised/attribute/AddCluster.java",
+    "/trunk/weka/src/test/java/weka/associations/AbstractAssociatorTest.java",
+    "/trunk/weka/src/test/java/weka/attributeSelection/AbstractAttributeSelectionTest.java",
+    "/trunk/weka/src/test/java/weka/classifiers/AbstractClassifierTest.java",
+    "/trunk/weka/src/test/java/weka/classifiers/functions/supportVector/AbstractKernelTest.java",
+    "/trunk/weka/src/test/java/weka/clusterers/AbstractClustererTest.java",
+    "/trunk/weka/src/test/java/weka/core/neighboursearch/AbstractNearestNeighbourSearchTest.java",
+    "/trunk/weka/src/test/java/weka/core/stopwords/AbstractStopwordsTest.java",
+    "/trunk/weka/src/test/java/weka/core/tokenizers/AbstractTokenizerTest.java",
+    "/trunk/weka/src/test/java/weka/datagenerators/AbstractClusterDefinitionTest.java",
+    "/trunk/weka/src/test/java/weka/datagenerators/AbstractDataGeneratorTest.java",
+    "/trunk/weka/src/test/java/weka/filters/AbstractFilterTest.java",
+    "/trunk/weka/src/test/java/weka/test/Regression.java",
+]
+
 POM_VERSION_TAG = "<!-- mini-weka-version -->"
 """ Comment tag in pom.xml to identify the version """
 
@@ -257,6 +295,12 @@ def process_paths(weka, paths, dry_run, verbose):
         if not path.startswith(SVN_PREFIX):
             continue
 
+        # check whether path is a manually modified file
+        modified = False
+        if path in MODIFIED_FILES:
+            modified = True
+            logger.warning("Modified file was updated: %s" % path)
+
         # check whether path is blacklisted
         blacklisted = False
         # check files
@@ -272,7 +316,7 @@ def process_paths(weka, paths, dry_run, verbose):
                         logger.info("Blacklisted: %s" % path)
                     blacklisted = True
                     break
-        if blacklisted:
+        if blacklisted or modified:
             continue
 
         if dry_run:
@@ -283,6 +327,9 @@ def process_paths(weka, paths, dry_run, verbose):
         # generate filenames
         source = weka + path[len("/trunk"):]  # exclude "/trunk"
         target = "./" + path[len(SVN_PREFIX):].replace("wekarefs", "")
+        # all non-java files into resources
+        if not target.endswith(".java"):
+            target = target.replace("java", "resources")
         if verbose:
             logger.info("%s\n->%s" % (source, target))
         result += 1
