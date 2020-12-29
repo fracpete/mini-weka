@@ -18,43 +18,12 @@ r15750   # svn revision
 
 ## Maven
 
-Snapshots and releases use the following versioning system:
+Releases use the following versioning system:
 ```
 X.Y.Z
 ```
 * `X.Y` - the Weka major/minor release version
 * `Z` - the Weka subversion repository revision that the code base was synced to
-
-### Snapshots
-
-Nightly snapshots get pushed out to [Sonatype's snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/com/github/fracpete/mini-weka/). In order to use these, you need
-to add the configuration for this snapshot repository to your `pom.xml`:
-
-```xml 
-  <repositories>
-    <repository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-```
-
-As for adding *mini-weka* as a dependency to your project, add the following to your `pom.xml`:
-
-```xml
-<dependency>
-  <groupId>com.github.fracpete</groupId>
-  <artifactId>mini-weka</artifactId>
-  <version>3.9.15750-SNAPSHOT</version><!-- mini-weka-version -->
-</dependency>
-``` 
 
 ### Releases
 
@@ -64,7 +33,7 @@ Add the following dependency to your `pom.xml` to use the latest [release](https
 <dependency>
   <groupId>com.github.fracpete</groupId>
   <artifactId>mini-weka</artifactId>
-  <version>3.9.15580</version>
+  <version>3.9.15750</version>
 </dependency>
 ```
 
