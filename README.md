@@ -33,7 +33,7 @@ Add the following dependency to your `pom.xml` to use the latest [release](https
 <dependency>
   <groupId>com.github.fracpete</groupId>
   <artifactId>mini-weka</artifactId>
-  <version>3.9.15750</version>
+  <version>3.9.15955</version>
 </dependency>
 ```
 
