@@ -21,8 +21,6 @@
 
 package weka.classifiers.evaluation;
 
-import java.util.ArrayList;
-
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -30,6 +28,8 @@ import weka.core.Instances;
 import weka.core.RevisionHandler;
 import weka.core.RevisionUtils;
 import weka.core.Utils;
+
+import java.util.ArrayList;
 
 /**
  * Generates points illustrating the prediction margin. The margin is defined as
@@ -39,7 +39,7 @@ import weka.core.Utils;
  * the training data and this gives better performance on test data.
  * 
  * @author Len Trigg (len@reeltwo.com)
- * @version $Revision: 10153 $
+ * @version $Revision: 15751 $
  */
 public class MarginCurve implements RevisionHandler {
 
@@ -143,31 +143,6 @@ public class MarginCurve implements RevisionHandler {
    */
   @Override
   public String getRevision() {
-    return RevisionUtils.extract("$Revision: 10153 $");
-  }
-
-  /**
-   * Tests the MarginCurve generation from the command line. The classifier is
-   * currently hardcoded. Pipe in an arff file.
-   * 
-   * @param args currently ignored
-   */
-  public static void main(String[] args) {
-
-    try {
-      Utils.SMALL = 0;
-      Instances inst = new Instances(new java.io.InputStreamReader(System.in));
-      inst.setClassIndex(inst.numAttributes() - 1);
-      MarginCurve tc = new MarginCurve();
-      EvaluationUtils eu = new EvaluationUtils();
-      weka.classifiers.meta.LogitBoost classifier = new weka.classifiers.meta.LogitBoost();
-      classifier.setNumIterations(20);
-      ArrayList<Prediction> predictions = eu.getTrainTestPredictions(
-        classifier, inst, inst);
-      Instances result = tc.getCurve(predictions);
-      System.out.println(result);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    }
+    return RevisionUtils.extract("$Revision: 15751 $");
   }
 }

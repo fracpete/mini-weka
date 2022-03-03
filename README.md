@@ -13,7 +13,7 @@ The code base of *mini-weka* is synced (manually) with Weka's subversion reposit
 revision:
 
 ```
-r15750   # svn revision
+r15955   # svn revision
 ```
 
 ## Maven

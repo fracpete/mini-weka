@@ -166,7 +166,7 @@ import weka.filters.unsupervised.attribute.NominalToBinary;
  * <!-- options-end -->
  * 
  * @author Malcolm Ware (mfw4@cs.waikato.ac.nz)
- * @version $Revision: 15519 $
+ * @version $Revision: 15879 $
  */
 public class MultilayerPerceptron extends AbstractClassifier implements
   OptionHandler, WeightedInstancesHandler, Randomizable, IterativeClassifier {
@@ -449,7 +449,7 @@ public class MultilayerPerceptron extends AbstractClassifier implements
      */
     @Override
     public String getRevision() {
-      return RevisionUtils.extract("$Revision: 15519 $");
+      return RevisionUtils.extract("$Revision: 15879 $");
     }
   }
 
@@ -696,7 +696,7 @@ public class MultilayerPerceptron extends AbstractClassifier implements
      */
     @Override
     public String getRevision() {
-      return RevisionUtils.extract("$Revision: 15519 $");
+      return RevisionUtils.extract("$Revision: 15879 $");
     }
   }
 
@@ -704,7 +704,7 @@ public class MultilayerPerceptron extends AbstractClassifier implements
    * This provides the basic controls for working with the neuralnetwork
    * 
    * @author Malcolm Ware (mfw4@cs.waikato.ac.nz)
-   * @version $Revision: 15519 $
+   * @version $Revision: 15879 $
    */
   class ControlPanel extends JPanel implements RevisionHandler {
 
@@ -903,7 +903,7 @@ public class MultilayerPerceptron extends AbstractClassifier implements
      */
     @Override
     public String getRevision() {
-      return RevisionUtils.extract("$Revision: 15519 $");
+      return RevisionUtils.extract("$Revision: 15879 $");
     }
   }
 
@@ -947,10 +947,10 @@ public class MultilayerPerceptron extends AbstractClassifier implements
   private int m_numAttributes = 0; // note the number doesn't include the class.
 
   /** The panel the nodes are displayed on. */
-  private NodePanel m_nodePanel;
+  private transient NodePanel m_nodePanel;
 
   /** The control panel. */
-  private ControlPanel m_controlPanel;
+  private transient ControlPanel m_controlPanel;
 
   /** The next id number available for default naming. */
   private int m_nextId;
@@ -970,7 +970,7 @@ public class MultilayerPerceptron extends AbstractClassifier implements
   /** a flag to state that the network should be accepted the way it is. */
   private boolean m_accepted;
   /** The window for the network. */
-  private JFrame m_win;
+  private transient JFrame m_win;
 
   /**
    * A flag to tell the build classifier to automatically build a neural net.
@@ -2828,6 +2828,6 @@ public class MultilayerPerceptron extends AbstractClassifier implements
    */
   @Override
   public String getRevision() {
-    return RevisionUtils.extract("$Revision: 15519 $");
+    return RevisionUtils.extract("$Revision: 15879 $");
   }
 }
