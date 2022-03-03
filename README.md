@@ -37,6 +37,8 @@ Add the following dependency to your `pom.xml` to use the latest [release](https
 </dependency>
 ```
 
+* 3.9.15955 - equivalent to 3.9.6
+
 ## Updating
 
 ### Update files
